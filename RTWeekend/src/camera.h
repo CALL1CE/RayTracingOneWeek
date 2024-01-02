@@ -1,10 +1,11 @@
 #pragma once
 #include"rtweekend.h"
+#include <execution>
 
 #include "color.h"
 #include "hittable.h"
 #include "material.h"
-
+#include <vector>
 class camera {
 public:
 	/* Public Camera Parameters Here */
@@ -14,6 +15,9 @@ public:
     int samples_per_pixel = 10; // count of random samples for each pixel
     int max_depth = 10;
 
+	std::vector<int> m_ImageVerticalIter;
+    std::vector<int> m_ImageHorizontalIter;
+    
     double vfov = 90; // Vertical view angle (field of view)
     point3 lookfrom = point3(0, 0, -1);
     point3 lookat = point3(0, 0, 0);
@@ -24,10 +28,36 @@ public:
 
 
 	void render(const hittable& world) {
-        initialize();
-
+        initialize(); 
+#define MT 1
+#if MT
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+		for (int i = 0; i < image_height; i++)
+			m_ImageVerticalIter.emplace_back(i);
+        for (int i = 0; i < image_width; i++)
+            m_ImageHorizontalIter.emplace_back(i);
+        std::vector<std::vector<color>> frame_buffer(image_height, std::vector<color>(image_width));
+        std::for_each(std::execution::par, m_ImageVerticalIter.begin(), m_ImageVerticalIter.end(),
+            [this, &world, &frame_buffer](int j) {
+				std::for_each(std::execution::par, m_ImageHorizontalIter.begin(), m_ImageHorizontalIter.end(),
+				[this, j, &world, &frame_buffer](int i) {
+						color pixel_color(0, 0, 0);
+						for (int sample = 0; sample < samples_per_pixel; ++sample) {
+							ray r = get_ray(i, j);
+							pixel_color += ray_color(r, max_depth, world);
+						}
+                        frame_buffer[j][i] = pixel_color;
+						//write_color(std::cout, pixel_color, samples_per_pixel);
+					});
+            });
+		for (int j = 0; j < image_height;j++)
+            for(int i = 0; i < image_width; i++)
+                write_color(std::cout, frame_buffer[j][i], samples_per_pixel);
+        std::clog << "\rDone.                                 \n";
+#else
         //render
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining:" << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
@@ -40,6 +70,7 @@ public:
             }
         }
         std::clog << "\rDone.                                 \n";
+#endif
 	}
 
 

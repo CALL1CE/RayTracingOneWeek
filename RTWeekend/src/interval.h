@@ -29,3 +29,4 @@ public:
 
 const static interval empty   (+infinity, -infinity);
 const static interval universe(+infinity, -infinity);
+

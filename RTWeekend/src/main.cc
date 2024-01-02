@@ -5,62 +5,7 @@
 #include"hittable_list.h"
 #include"material.h"
 #include"sphere.h"
-
-
-
-//test main
-//int testmain(){
-//
-//    //World
-//    hittable_list world;
-//
-//    //test fov
-//    //auto R = cos(pi / 4);
-//
-//    //auto material_left = make_shared<lambertian>(color(0, 0, 1));
-//    //auto material_right = make_shared<lambertian>(color(1, 0, 0));
-//
-//    //world.add(make_shared<sphere>(point3(-R, 0.0, -1.0), R, material_left));
-//    //world.add(make_shared<sphere>(point3(R, 0.0, -1.0), R, material_right));
-//
-//
-//    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-//    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-//    //auto material_left = make_shared<metal>(color(0.8, 0.8, 0.8), 0.3);
-//    //auto material_center = make_shared<dielectric>(1.5);
-//    auto material_left = make_shared<dielectric>(1.5);
-//    auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
-//
-//
-//
-//    
-//    world.add(make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground));
-//    world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center));
-//    world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
-//    //hollow glass sphere
-//    world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_left));
-//    world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
-//
-//
-//    camera cam;
-//
-//    cam.aspect_ratio = 16.0 / 9.0;
-//    cam.image_width = 400;
-//    cam.samples_per_pixel = 100;
-//    cam.max_depth = 50;
-//
-//    cam.vfov = 20;
-//    cam.lookfrom = point3(-2, 2, 1);
-//    cam.lookat = point3(0, 0, -1);
-//    cam.vup = vec3(0, 1, 0);
-//
-//    cam.defocus_angle = 10.0;
-//    cam.focus_dist = 3.4;
-//
-//    cam.render(world);
-//
-//    return 0;
-//}
+#include <chrono>
 
 int main() {
     hittable_list world;
@@ -122,5 +67,13 @@ int main() {
     cam.defocus_angle = 0.6;
     cam.focus_dist = 10.0;
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     cam.render(world);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+	//std::cout << "代码执行花费的时间: " << duration.count() << " 秒" << std::endl;
+    std::clog << "代码执行花费的时间: " << duration.count() << " 秒" << std::endl;
+
 }
