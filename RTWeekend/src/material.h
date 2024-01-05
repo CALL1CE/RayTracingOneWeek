@@ -1,6 +1,6 @@
 #pragma once
 #include "rtweekend.h"
-
+#include "texture.h"
 class hit_record;
 using color = vec3;
 class material {
@@ -13,9 +13,9 @@ public:
 
 class lambertian : public material {
 public:
-	lambertian(const color& a) : albedo(a) {}
+	lambertian(shared_ptr<texture> a) : albedo(a) {}
 	
-	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override{
+	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const override{
 		
 		auto scatter_direction = rec.normal + random_unit_vector();
 
@@ -24,32 +24,32 @@ public:
 			scatter_direction = rec.normal;
 
 		scattered = ray(rec.p, scatter_direction);
-		attenuation = albedo;
+		attenuation = albedo->value(rec.u, rec.v,rec.p);
 		return true;
 	}
 	
 
 
 private:
-	color albedo;
+	shared_ptr<texture> albedo;
 };
 
 class metal : public material {
 public:
 	//use fuzzy reflection
-	metal(const color& a, double f) : albedo(a), fuzz(f<1?f:1) {}
+	metal(shared_ptr<texture> a, double f) : albedo(a), fuzz(f<1?f:1) {}
 
 
-	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override {
+	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const override {
 		
 		vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
 
 		scattered = ray(rec.p, reflected + fuzz*random_unit_vector());
-		attenuation = albedo;
+		attenuation = albedo->value(rec.u,rec.v,rec.p);
 		return (dot(scattered.direction(), rec.normal) > 0);
 	}
 private:
-	color albedo;
+	shared_ptr<texture> albedo;
 	double fuzz;
 };
 

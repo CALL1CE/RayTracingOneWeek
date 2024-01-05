@@ -92,6 +92,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\aabb.h" />
+    <ClInclude Include="src\bvh.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\color.h" />
     <ClInclude Include="src\hittable.h" />
@@ -101,6 +102,7 @@
     <ClInclude Include="src\ray.h" />
     <ClInclude Include="src\rtweekend.h" />
     <ClInclude Include="src\sphere.h" />
+    <ClInclude Include="src\texture.h" />
     <ClInclude Include="src\vec3.h" />
   </ItemGroup>
   <ItemGroup>
