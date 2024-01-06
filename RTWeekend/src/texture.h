@@ -1,6 +1,8 @@
 #pragma once
 
 #include "rtweekend.h"
+#include "rtw_stb_image.h"
+#include "perlin.h"
 
 using color = vec3;
 class texture {
@@ -49,4 +51,49 @@ private:
 	double inv_scale;
 	shared_ptr<texture> even;
 	shared_ptr<texture> odd;
+};
+
+class image_texture : public texture {
+public:
+	image_texture(const char* filename) : image(filename) {}
+
+	color value(double u, double v, const point3& p) const override {
+		// If we have no texture data, then return solid cyan as a debugging aid.
+		if (image.height() <= 0) return color(0, 1, 1);
+
+		// Clamp input texture coordinates to [0,1] x [1,0]
+		u = interval(0, 1).clamp(u);
+		v = 1.0 - interval(0, 1).clamp(v);  // Flip V to image coordinates
+
+		auto i = static_cast<int>(u * image.width());
+		auto j = static_cast<int>(v * image.height());
+		auto pixel = image.pixel_data(i, j);
+
+		auto color_scale = 1.0 / 255.0;
+		return color(color_scale * pixel[0], color_scale * pixel[1], color_scale * pixel[2]);
+	}
+
+private:
+	rtw_image image;
+};
+
+class noise_texture : public texture {
+public:
+	noise_texture() {}
+	noise_texture(double sc) : scale(sc) {}
+	color value(double u, double v, const point3& p) const override {
+		//return color(1, 1, 1) * noise.noise(scale * p);
+		
+		//return color(1, 1, 1) * 0.5 * (1.0 + noise.noise(scale * p));
+
+		//auto s = scale * p;
+		//return color(1, 1, 1) * noise.turb(s);
+
+		auto s = scale * p;
+		return color(1, 1, 1) * 0.5 * (1 + sin(s.z() + 10 * noise.turb(s)));
+	}
+
+private:
+	perlin noise;
+	double scale;
 };

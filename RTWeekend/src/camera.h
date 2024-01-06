@@ -1,11 +1,15 @@
 #pragma once
 #include"rtweekend.h"
 #include <execution>
-
+#include <mutex>
+#include <iomanip>
 #include "color.h"
 #include "hittable.h"
 #include "material.h"
 #include <vector>
+
+std::mutex mtx;
+
 class camera {
 public:
 	/* Public Camera Parameters Here */
@@ -22,6 +26,7 @@ public:
     point3 lookfrom = point3(0, 0, -1);
     point3 lookat = point3(0, 0, 0);
     vec3 vup = vec3(0, 1, 0);
+    color  background;               // Scene background color
 
     double defocus_angle = 0; // Variation angle of rays through each pixel
     double focus_dist = 10; //distance from camera lookfrom point to plane of perfect focus
@@ -36,9 +41,18 @@ public:
 			m_ImageVerticalIter.emplace_back(i);
         for (int i = 0; i < image_width; i++)
             m_ImageHorizontalIter.emplace_back(i);
+        int curProcess = 0;
         std::vector<std::vector<color>> frame_buffer(image_height, std::vector<color>(image_width));
         std::for_each(std::execution::par, m_ImageVerticalIter.begin(), m_ImageVerticalIter.end(),
-            [this, &world, &frame_buffer](int j) {
+            [this, &world, &frame_buffer,&curProcess](int j) {
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+                    curProcess++;
+                    float percentage = (float)curProcess / (float)image_height;
+                    percentage *= 100;
+                    std::clog << "\rProcess:" << std::fixed << std::setprecision(2)<<percentage << "% " << std::flush;
+                }
+                
 				std::for_each(std::execution::par, m_ImageHorizontalIter.begin(), m_ImageHorizontalIter.end(),
 				[this, j, &world, &frame_buffer](int i) {
 						color pixel_color(0, 0, 0);
@@ -48,6 +62,7 @@ public:
 						}
                         frame_buffer[j][i] = pixel_color;
 						//write_color(std::cout, pixel_color, samples_per_pixel);
+
 					});
             });
 		for (int j = 0; j < image_height;j++)
@@ -161,26 +176,21 @@ private:
         if (depth <= 0)
             return color(0, 0, 0);
 
-        if (world.hit(r, interval(0.001, infinity), rec)) {
-            //normal color
-            //return 0.5 * (rec.normal + color(1, 1, 1));
+		// If the ray hits nothing, return the background color.
+		if (!world.hit(r, interval(0.001, infinity), rec))
+			return background;
 
-            //uniform scatter
-            //vec3 direction = random_on_hemisphere(rec.normal);
-            //Lambertian distribution
-            //vec3 direction = rec.normal + random_unit_vector();
-            //return 0.5 * ray_color(ray(rec.p, direction), depth - 1, world);
+        ray scattered;
+        color attenuation;
+        color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-            ray scattered;
-            color attenuation;
-            if (rec.mat->scatter(r, rec, attenuation, scattered))
-                return attenuation * ray_color(scattered, depth - 1, world);
-            return color(0, 0, 0);
-        }
+        //if no scatter means this is an emission
+		if (!rec.mat->scatter(r, rec, attenuation, scattered))
+			return color_from_emission;
 
-        //background gradient blue-white
-        vec3 uint_direction = unit_vector(r.direction());
-        auto a = 0.5 * (uint_direction.y() + 1.0);
-        return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
+        color color_from_scatter = attenuation * ray_color(scattered, depth - 1, world);
+
+        return color_from_emission + color_from_scatter;
+        
     }
 };
